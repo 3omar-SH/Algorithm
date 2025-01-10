@@ -1,97 +1,90 @@
 package Backtracking_ch6;
-import java.util.*;
+import java.util.PriorityQueue;
 
-class KNode {
-    int level, profit, weight;
+class Node implements Comparable<Node> {
+    int level;
+    int profit;
+    int weight;
+    double bound;
 
-    public KNode() {
-    }
-
-    public KNode(KNode copy) {
-        this.level = copy.level;
-        this.profit = copy.profit;
-        this.weight = copy.weight;
+    @Override
+    public int compareTo(Node other) {
+        return Double.compare(other.bound, this.bound); // نريد أكبر قيمة للحد الأعلى
     }
 }
 
-class Knapsack3 {
-    static int[] p, w;
-    static int W;
-    static int n;
-    static int maxProfit;
-
-    static float bound1(KNode u) {
-        int j, k;
-        int totWeight;
-        float result;
-
-        if (u.weight >= W)
+public class Knapsack3 {
+    static int bound(Node u, int n, int W, int[] p, int[] w) {
+        if (u.weight >= W) {
             return 0;
-        else {
-            result = u.profit;
-            j = u.level + 1;
-            totWeight = u.weight;
-            while ((j < n) && (totWeight + w[j] <= W)) {
-                totWeight += w[j];
-                result += p[j];
-                j++;
-            }
-            k = j;
-            if (k < n)
-                result += (W - totWeight) * ((float) p[k] / w[k]);
-            return result;
         }
+        int profit_bound = u.profit;
+        int j = u.level + 1;
+        int totweight = u.weight;
+
+        while ((j < n) && (totweight + w[j] <= W)) {
+            totweight += w[j];
+            profit_bound += p[j];
+            j++;
+        }
+
+        if (j < n) {
+            profit_bound += (W - totweight) * p[j] / w[j];
+        }
+
+        return profit_bound;
     }
 
-    static void knapsack3(int[] p, int[] w, int W, int n) {
-        Knapsack.p = p;
-        Knapsack.w = w;
-        Knapsack.W = W;
-        Knapsack.n = n;
-        maxProfit = 0;
-
-        Queue<KNode> Q = new LinkedList<>();
-        KNode v = new KNode();
+    public static void knapsack3(int n, int[] p, int[] w, int W) {
+        PriorityQueue<Node> PQ = new PriorityQueue<>();
+        Node u, v = new Node();
 
         v.level = -1;
         v.profit = 0;
         v.weight = 0;
-        Q.add(v);
+        int maxprofit = 0;
+        v.bound = bound(v, n, W, p, w);
+        PQ.add(v);
 
-        while (!Q.isEmpty()) {
-            v = Q.poll();
+        while (!PQ.isEmpty()) {
+            v = PQ.poll();
 
-            if (v.level == -1)
-                v.level = 0;
-            if (v.level == n - 1)
-                continue;
-            KNode u = new KNode(v);
-            u.level = v.level + 1;
+            if (v.bound > maxprofit) {
+                u = new Node();
+                u.level = v.level + 1;
+                u.weight = v.weight + w[u.level];
+                u.profit = v.profit + p[u.level];
 
-            // Including the next item
-            u.weight = v.weight + w[u.level];
-            u.profit = v.profit + p[u.level];
+                if (u.weight <= W && u.profit > maxprofit) {
+                    maxprofit = u.profit;
+                }
 
-            if (u.weight <= W && u.profit > maxProfit)
-                maxProfit = u.profit;
+                u.bound = bound(u, n, W, p, w);
+                if (u.bound > maxprofit) {
+                    PQ.add(u);
+                }
 
-            if (bound1(u) > maxProfit)
-                Q.add(new KNode(u));
-
-            // Excluding the next item
-            u.weight = v.weight;
-            u.profit = v.profit;
-            if (bound1(u) > maxProfit)
-                Q.add(new KNode(u));
+                u = new Node();
+                u.level = v.level + 1;
+                u.weight = v.weight;
+                u.profit = v.profit;
+                u.bound = bound(u, n, W, p, w);
+                if (u.bound > maxprofit) {
+                    PQ.add(u);
+                }
+            }
         }
+
+        System.out.println("Maximum profit is: " + maxprofit);
     }
 
     public static void main(String[] args) {
-        int[] p = { 60, 100, 50 };
-        int[] w = { 10, 20, 30 };
+        int[] p = {60, 100, 50};
+        int[] w = {10, 20, 30};
         int W = 50;
         int n = p.length;
-        knapsack3(p, w, W, n);
-        System.out.println("Maximum profit is " + maxProfit);
+
+        knapsack3(n, p, w, W);
     }
 }
+
